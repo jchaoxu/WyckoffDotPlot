@@ -27,16 +27,6 @@ class Movement:
     def is_decreasing(self):
         return self._trend == Trend.decreasing
 
-    def get_open(self):
-        if self.is_decreasing():
-            return max(self._moves)
-        return min(self._moves)
-
-    def get_close(self):
-        if self.is_increasing():
-            return max(self._moves)
-        return min(self._moves)
-
     def compress(self, moves: list[float]):
         self._moves.extend(moves)
         self._moves = list(set(self._moves))
@@ -147,13 +137,6 @@ def plot(title, rst: list[Movement]):
     print("Plot saved successfully. See result folder.")
 
 
-def is_over_threshold_move(m1: Movement, m2:Movement, threshold, precision):
-    true_threshold = threshold / math.pow(10, precision)
-    if m2.get_close() - m1.get_close() > true_threshold:
-        return True
-    return False
-
-
 def compress_single(movements: list[Movement]):
     result: list[Movement] = []
     for i in range(len(movements)):
@@ -166,15 +149,16 @@ def compress_single(movements: list[Movement]):
 
 
 class Drawer:
-    def __init__(self, open_p, close_p, high_p, low_p, precision):
+    def __init__(self, open_p, close_p, high_p, low_p, precision, compression_threshold):
         self._open_p = open_p
         self._close_p = close_p
         self._high_p = high_p
         self._low_p = low_p
         self._size = len(self._open_p)
         self._precision = precision
+        self._compression_threshold = compression_threshold
 
-    def get_single_dot(self) -> list[Movement]:
+    def get_dot_data(self) -> list[Movement]:
         movements = []
         for i in range(0, self._size):
             movements.append(
@@ -196,4 +180,28 @@ class Drawer:
         # Compress single dot movements
         single_compressed_movement = compress_single(trend_separated_movement)
 
-        return single_compressed_movement
+        # Compress
+        compressed_moment = self._compress(single_compressed_movement)
+
+        return compressed_moment
+
+    def _compress(self, movements: list[Movement]):
+        if self._compression_threshold == 1:
+            return movements
+
+        result: list[Movement] = []
+
+        i = 0
+        while i < len(movements):
+            if i == 0:
+                result.append(movements[i])
+                i = i + 1
+            elif movements[i].get_length() >= self._compression_threshold:
+                result.append(movements[i])
+                i = i + 1
+            else:
+                if i < len(movements) - 1:
+                    result[-1].compress(movements[i + 1].get_moves())
+                i = i + 2
+
+        return result
