@@ -27,6 +27,24 @@ class Movement:
     def is_decreasing(self):
         return self._trend == Trend.decreasing
 
+    def get_open(self):
+        if self.is_decreasing():
+            return max(self._moves)
+        return min(self._moves)
+
+    def get_close(self):
+        if self.is_increasing():
+            return max(self._moves)
+        return min(self._moves)
+
+    def compress(self, moves: list[float]):
+        self._moves.extend(moves)
+        self._moves = list(set(self._moves))
+        self._moves.sort()
+
+    def get_length(self):
+        return len(self._moves)
+
 
 def get_single_day_movement(open_p: float, close_p: float, high_p: float, low_p: float, precision: int):
     coefficient = math.pow(10, precision)
@@ -129,6 +147,24 @@ def plot(title, rst: list[Movement]):
     print("Plot saved successfully. See result folder.")
 
 
+def is_over_threshold_move(m1: Movement, m2:Movement, threshold, precision):
+    true_threshold = threshold / math.pow(10, precision)
+    if m2.get_close() - m1.get_close() > true_threshold:
+        return True
+    return False
+
+
+def compress_single(movements: list[Movement]):
+    result: list[Movement] = []
+    for i in range(len(movements)):
+        if movements[i].get_length() == 1:
+            if i < len(movements) - 1:
+                movements[i + 1].compress(movements[i].get_moves())
+        else:
+            result.append(movements[i])
+    return result
+
+
 class Drawer:
     def __init__(self, open_p, close_p, high_p, low_p, precision):
         self._open_p = open_p
@@ -156,4 +192,8 @@ class Drawer:
 
         # Separate data by trend (increasing / decreasing)
         trend_separated_movement = separate_trend(concat_movement)
-        return trend_separated_movement
+
+        # Compress single dot movements
+        single_compressed_movement = compress_single(trend_separated_movement)
+
+        return single_compressed_movement
