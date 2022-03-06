@@ -29,3 +29,8 @@
 - Do not provide any inputs larger than 2.
 - 0 means keep all decimal places.
 - Tips: You may want to keep more decimal places if the stock price is low.
+
+### Dot number
+- The compression ratio.
+- Indicate the type of the dot plot (i.e., single dot ploat, three dot plat, five dot plot).
+- Please enter a integer greater or equal to 1.
